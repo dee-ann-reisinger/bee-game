@@ -1,0 +1,167 @@
+#include <Arduboy2.h>
+#include <Sprites.h>
+#include <ArduboyTones.h>
+#include "images.h"
+
+//#define VOLUME TONE_HIGH_VOLUME
+#define VOLUME 0
+
+Arduboy2 arduboy;
+Sprites sprites;
+ArduboyTones sound(arduboy.audio.enabled);
+
+Point curs = {63, 31}; // cursor's coordinates
+Point target;
+
+#define N_WALLS 4
+Rect walls[N_WALLS];
+
+#define N_BEES 2
+Point bees[N_BEES];
+bool is_tgt[N_BEES];
+
+const int level_1[][4] PROGMEM = {{10,10,40,10},
+                                  {10,43,40,10},
+                                  {50, 0,10,20},
+                                  {50,43,10,20}};
+
+const int coff = 2; // cursor offset
+const int poff = 7; // ping offset
+int pframe = -1;
+int px, py;
+
+void setup() {
+
+  arduboy.begin();
+  arduboy.initRandomSeed();
+  arduboy.setFrameRate(30);
+
+  walls[0] = {10,10,40,10};
+  walls[1] = {10,43,40,10};
+  walls[2] = {50, 0,10,20};
+  walls[3] = {50,43,10,20};
+
+  bees[0] = {30, 5};
+  bees[1] = {30, 58};
+  for(int i = 0; i < N_BEES; i++) {
+    is_tgt[i] = false;
+  }
+}
+
+void loop() {
+  if(!arduboy.nextFrame()) return;
+  arduboy.clear();
+  arduboy.pollButtons();
+
+  if(arduboy.pressed(UP_BUTTON)) {
+    curs.y -= 1;
+  }
+  if(arduboy.pressed(DOWN_BUTTON)) {
+    curs.y += 1;
+  }
+  if(arduboy.pressed(LEFT_BUTTON)) {
+    curs.x -= 1;
+  }
+  if(arduboy.pressed(RIGHT_BUTTON)) {
+    curs.x += 1;
+  }
+
+  if(arduboy.justPressed(A_BUTTON)) {
+    sound.tone(350 + VOLUME, 105, 345 + VOLUME, 30);
+    for(int i = 0; i < N_BEES; i++) {
+      is_tgt[i] = true;
+    }
+    target = curs;
+    px = curs.x;
+    py = curs.y;
+    pframe = 0;
+  }
+
+  for(int i = 0; i < N_BEES; i++) {
+    if(is_tgt[i]) {
+      int x_offset = bias_draw(target.x - bees[i].x);
+      if(!collides({bees[i].x + x_offset, bees[i].y})) {
+        bees[i].x += x_offset;
+      }
+      int y_offset = bias_draw(target.y - bees[i].y);
+      if(!collides({bees[i].x, bees[i].y + y_offset})) {
+        bees[i].y += y_offset;
+      }
+    } else {
+      int x_offset = bias_draw(0);
+      if(!collides({bees[i].x + x_offset, bees[i].y})) {
+        bees[i].x += x_offset;
+      }
+      int y_offset = bias_draw(0);
+      if(!collides({bees[i].x, bees[i].y + y_offset})) {
+        bees[i].y += y_offset;
+      }
+    }
+  
+    if (bees[i].x == target.x && bees[i].y == target.y) {
+      is_tgt[i] = false;
+    }
+  
+    bees[i].x = mid(0, bees[i].x, 127);
+    bees[i].y = mid(0, bees[i].y, 63);
+    curs.x = mid(0, curs.x, 127);
+    curs.y = mid(0, curs.y, 63);
+  
+    arduboy.drawPixel(bees[i].x, bees[i].y); // draw the bee
+  }
+  for(int i = 0; i < N_WALLS; i++) {
+    draw_wall(walls[i]);
+  }
+  if(collides(curs)) {
+    sprites.drawErase(curs.x - coff, curs.y - coff, cursor_sprite, 0);
+    Serial.print(F("drawing inverted"));
+  } else { 
+    sprites.drawSelfMasked(curs.x - coff, curs.y - coff, cursor_sprite, 0);
+  }
+  if (pframe >= 0) {
+    sprites.drawPlusMask(px - poff, py - poff, ping_plus_mask, pframe);
+  }
+
+ 
+
+  if (pframe >= 0) {
+    pframe++;
+    if (pframe > 2) {
+      pframe = -1;
+    }
+  }
+  arduboy.display();
+}
+
+int mid(int low, int x, int high) {
+  if (x < low) {
+    return low;
+  } else if (x > high) {
+    return high;
+  }
+  return x;
+}
+
+int bias_draw(int dir) {
+  int should_follow = random(100) < 69;
+  if (dir > 0 && should_follow) {
+    return 1;
+  } else if (dir < 0 && should_follow) {
+    return -1;
+  }
+  return random(3) - 1;
+}
+
+void draw_wall(Rect w) {
+  arduboy.fillRect(w.x, w.y, w.width, w.height);
+}
+
+bool collides(Point p) {
+  for(int i = 0; i < N_WALLS; i++) {
+    if(arduboy.collide(p, walls[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
