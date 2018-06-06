@@ -6,13 +6,23 @@
 //#define VOLUME TONE_HIGH_VOLUME
 #define VOLUME 0
 
+// Arduino boilerplate
 Arduboy2 arduboy;
 Sprites sprites;
 ArduboyTones sound(arduboy.audio.enabled);
 
+// cursor stuff
 Point curs = {63, 31}; // cursor's coordinates
 Point target;
+Rect* grabbed;
+bool is_grabbing = false;
 
+const int coff = 2; // cursor draw offset
+const int poff = 7; // ping draw offset
+int pframe = -1;
+int px, py;
+
+// Level stuff
 #define N_WALLS 4
 Rect walls[N_WALLS];
 
@@ -20,15 +30,7 @@ Rect walls[N_WALLS];
 Point bees[N_BEES];
 bool is_tgt[N_BEES];
 
-const int level_1[][4] PROGMEM = {{10,10,40,10},
-                                  {10,43,40,10},
-                                  {50, 0,10,20},
-                                  {50,43,10,20}};
-
-const int coff = 2; // cursor offset
-const int poff = 7; // ping offset
-int pframe = -1;
-int px, py;
+Rect mwall = {60, 15, 10, 34};
 
 void setup() {
 
@@ -37,9 +39,9 @@ void setup() {
   arduboy.setFrameRate(30);
 
   walls[0] = {10,10,40,10};
-  walls[1] = {10,43,40,10};
+  walls[1] = {10,44,40,10};
   walls[2] = {50, 0,10,20};
-  walls[3] = {50,43,10,20};
+  walls[3] = {50,44,10,20};
 
   bees[0] = {30, 5};
   bees[1] = {30, 58};
@@ -80,20 +82,20 @@ void loop() {
   for(int i = 0; i < N_BEES; i++) {
     if(is_tgt[i]) {
       int x_offset = bias_draw(target.x - bees[i].x);
-      if(!collides({bees[i].x + x_offset, bees[i].y})) {
+      if(!collides({bees[i].x + x_offset, bees[i].y}, true)) {
         bees[i].x += x_offset;
       }
       int y_offset = bias_draw(target.y - bees[i].y);
-      if(!collides({bees[i].x, bees[i].y + y_offset})) {
+      if(!collides({bees[i].x, bees[i].y + y_offset}, true)) {
         bees[i].y += y_offset;
       }
     } else {
       int x_offset = bias_draw(0);
-      if(!collides({bees[i].x + x_offset, bees[i].y})) {
+      if(!collides({bees[i].x + x_offset, bees[i].y}, true)) {
         bees[i].x += x_offset;
       }
       int y_offset = bias_draw(0);
-      if(!collides({bees[i].x, bees[i].y + y_offset})) {
+      if(!collides({bees[i].x, bees[i].y + y_offset}, true)) {
         bees[i].y += y_offset;
       }
     }
@@ -112,9 +114,9 @@ void loop() {
   for(int i = 0; i < N_WALLS; i++) {
     draw_wall(walls[i]);
   }
-  if(collides(curs)) {
+  draw_mwall(mwall);
+  if(collides(curs, false)) {
     sprites.drawErase(curs.x - coff, curs.y - coff, cursor_sprite, 0);
-    Serial.print(F("drawing inverted"));
   } else { 
     sprites.drawSelfMasked(curs.x - coff, curs.y - coff, cursor_sprite, 0);
   }
@@ -156,11 +158,22 @@ void draw_wall(Rect w) {
   arduboy.fillRect(w.x, w.y, w.width, w.height);
 }
 
-bool collides(Point p) {
+void draw_mwall(Rect w) {
+  arduboy.drawRect(w.x, w.y, w.width, w.height);
+  arduboy.drawRect(w.x + 2, w.y + 2, w.width - 4, w.height - 4);
+}
+
+bool collides(Point p, bool count_mwalls) {
   for(int i = 0; i < N_WALLS; i++) {
     if(arduboy.collide(p, walls[i])) {
       return true;
     }
+  }
+  if (!count_mwalls) {
+    return false;
+  }
+  if(arduboy.collide(p, mwall)) {
+    return true;
   }
   return false;
 }
