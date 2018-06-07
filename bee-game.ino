@@ -57,9 +57,15 @@ void loop() {
 
   if(arduboy.pressed(UP_BUTTON)) {
     curs.y -= 1;
+    if(is_grabbing) {
+      grabbed->y -= 1;
+    }
   }
   if(arduboy.pressed(DOWN_BUTTON)) {
     curs.y += 1;
+    if(is_grabbing) {
+      grabbed->y += 1;
+    }
   }
   if(arduboy.pressed(LEFT_BUTTON)) {
     curs.x -= 1;
@@ -77,6 +83,17 @@ void loop() {
     px = curs.x;
     py = curs.y;
     pframe = 0;
+  }
+
+  if(!arduboy.pressed(B_BUTTON)) {
+    is_grabbing = false;
+  }
+
+  if(arduboy.justPressed(B_BUTTON)) {
+    if(arduboy.collide(curs, mwall)) {
+      is_grabbing = true;
+      grabbed = &mwall;
+    }
   }
 
   for(int i = 0; i < N_BEES; i++) {
