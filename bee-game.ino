@@ -30,7 +30,9 @@ Rect walls[N_WALLS];
 Point bees[N_BEES];
 bool is_tgt[N_BEES];
 
-Rect mwall = {60, 15, 10, 34};
+// moveable walls
+#define N_MWALLS 1
+Rect mwalls[N_MWALLS];
 
 void setup() {
 
@@ -42,6 +44,8 @@ void setup() {
   walls[1] = {10,44,40,10};
   walls[2] = {50, 0,10,20};
   walls[3] = {50,44,10,20};
+
+  mwalls[0] = {60, 15, 10, 34};
 
   bees[0] = {30, 5};
   bees[1] = {30, 58};
@@ -90,9 +94,12 @@ void loop() {
   }
 
   if(arduboy.justPressed(B_BUTTON)) {
-    if(arduboy.collide(curs, mwall)) {
+    for (int i = 0; i < N_MWALLS; i++) {
+      if(arduboy.collide(curs, mwalls[i])) {
       is_grabbing = true;
-      grabbed = &mwall;
+      grabbed = &mwalls[i];
+      break;
+    }
     }
   }
 
@@ -131,7 +138,9 @@ void loop() {
   for(int i = 0; i < N_WALLS; i++) {
     draw_wall(walls[i]);
   }
-  draw_mwall(mwall);
+  for(int i = 0; i < N_MWALLS; i++) {
+    draw_mwall(mwalls[i]);
+  }
   if(collides(curs, false)) {
     sprites.drawErase(curs.x - coff, curs.y - coff, cursor_sprite, 0);
   } else { 
@@ -189,8 +198,10 @@ bool collides(Point p, bool count_mwalls) {
   if (!count_mwalls) {
     return false;
   }
-  if(arduboy.collide(p, mwall)) {
-    return true;
+  for(int i = 0; i < N_MWALLS; i++) {
+    if(arduboy.collide(p, mwalls[i])) {
+      return true;
+    }
   }
   return false;
 }
