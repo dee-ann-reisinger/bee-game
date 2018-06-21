@@ -31,7 +31,7 @@ Point bees[N_BEES];
 bool is_tgt[N_BEES];
 
 // moveable walls
-#define N_MWALLS 2
+#define N_MWALLS 3
 Rect mwalls[N_MWALLS];
 
 void setup() {
@@ -47,6 +47,7 @@ void setup() {
 
   mwalls[0] = {60, 15, 10, 34};
   mwalls[1] = {70, 15, 10, 34};
+  mwalls[2] = {80, 15, 8, 34};
 
   bees[0] = {30, 5};
   bees[1] = {30, 58};
