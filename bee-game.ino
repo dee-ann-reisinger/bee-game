@@ -38,6 +38,10 @@ bool is_tgt[N_BEES]; // tracks whether each bee has a target to chase
 Rect mwalls[N_MWALLS];
 char mwall_dirs[N_MWALLS];
 
+#define GOALSIZE 11
+int goal_count = 1;
+Rect goal = {100, 30, GOALSIZE, GOALSIZE};
+
 void setup() {
 
   arduboy.begin();
@@ -108,6 +112,7 @@ void loop() {
   for(int i = 0; i < N_MWALLS; i++) {
     draw_mwall(mwalls[i]);
   }
+  draw_goal();
   if(collides(curs, false)) {
     sprites.drawErase(curs.x - coff, curs.y - coff, cursor_sprite, 0);
   } else { 
@@ -294,5 +299,11 @@ void move_wall(int d, char dir) {
 
 bool same_rect(Rect r1, Rect r2) {
   return (r1.x == r2.x) && (r1.y == r2.y) && (r1.width == r2.width) && (r1.height == r2.height);
+}
+
+void draw_goal() {
+  arduboy.drawRect(goal.x, goal.y, goal.width, goal.height);
+  arduboy.setCursor(goal.x+3, goal.y+2);
+  arduboy.print(goal_count);
 }
 
