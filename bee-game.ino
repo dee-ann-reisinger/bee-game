@@ -173,6 +173,20 @@ bool collides(Point p, bool count_mwalls) {
   return false;
 }
 
+bool wall_collides(Rect w) {
+  for(int i = 0; i < N_WALLS; i++) {
+    if(!same_rect(walls[i], w) && arduboy.collide(w, walls[i])) {
+      return true;
+    }
+  }
+  for(int i = 0; i < N_MWALLS; i++) {
+    if(!same_rect(mwalls[i], w) && arduboy.collide(w, mwalls[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void build_level() {
   walls[0] = {10,10,40,10};
   walls[1] = {10,44,40,10};
@@ -257,6 +271,11 @@ void move_wall(int d, char dir) {
     mwalls[grabbed].x += dx;
     mwalls[grabbed].y += dy;
   }
+  if(wall_collides(mwalls[grabbed])) {
+    mwalls[grabbed].x -= dx;
+    mwalls[grabbed].y -= dy;
+    return;
+  }
   // push bees out of the way
   for (int i = 0; i < N_BEES; i++) {
     if(arduboy.collide(bees[i], mwalls[grabbed])) {
@@ -271,5 +290,9 @@ void move_wall(int d, char dir) {
       }
     }
   }
+}
+
+bool same_rect(Rect r1, Rect r2) {
+  return (r1.x == r2.x) && (r1.y == r2.y) && (r1.width == r2.width) && (r1.height == r2.height);
 }
 
