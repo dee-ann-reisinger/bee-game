@@ -250,11 +250,26 @@ void move_bee(int i) {
 }
 
 void move_wall(int d, char dir) {
+  assert(is_grabbing);
   int dx = (dir == HORIZONTAL) ? d : 0;
   int dy = (dir == VERTICAL) ? d : 0;
   if(mwall_dirs[grabbed] == dir) { // also move mwall if grabbed
     mwalls[grabbed].x += dx;
     mwalls[grabbed].y += dy;
+  }
+  // push bees out of the way
+  for (int i = 0; i < N_BEES; i++) {
+    if(arduboy.collide(bees[i], mwalls[grabbed])) {
+      bees[i].x += dx;
+      bees[i].y += dy;
+      if(collides(bees[i], true)) {
+        bees[i].x -= dx;
+        bees[i].y -= dy;
+        mwalls[grabbed].x -= dx;
+        mwalls[grabbed].y -= dy;
+        return;
+      }
+    }
   }
 }
 
