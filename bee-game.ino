@@ -43,23 +43,7 @@ void setup() {
   arduboy.initRandomSeed();
   arduboy.setFrameRate(30);
 
-  walls[0] = {10,10,40,10};
-  walls[1] = {10,44,40,10};
-  walls[2] = {50, 0,10,20};
-  walls[3] = {50,44,10,20};
-
-  mwalls[0] = {60, 15, 10, 34};
-  mwall_dirs[0] = VERTICAL;
-  mwalls[1] = {70, 15, 10, 34};
-  mwall_dirs[1] = VERTICAL;
-  mwalls[2] = {0, 20, 15, 10};
-  mwall_dirs[2] = HORIZONTAL;
-
-  bees[0] = {30, 5};
-  bees[1] = {30, 58};
-  for(int i = 0; i < N_BEES; i++) {
-    is_tgt[i] = false;
-  }
+  build_level();
 }
 
 void loop() {
@@ -95,15 +79,8 @@ void loop() {
 
   // calling bees
   if(arduboy.justPressed(A_BUTTON)) {
-    sound.tone(350 + VOLUME, 105, 345 + VOLUME, 30);
-    for(int i = 0; i < N_BEES; i++) {
-      is_tgt[i] = true;
-    }
-    target = curs;
-    // create ping
-    px = curs.x;
-    py = curs.y;
-    pframe = 0;
+    set_target();
+    make_ping();
   }
 
   // stop grabbing walls when you're not pressing the B button
@@ -113,45 +90,12 @@ void loop() {
 
   // grab wall on pressing B
   if(arduboy.justPressed(B_BUTTON)) {
-    for (int i = 0; i < N_MWALLS; i++) {
-      if(arduboy.collide(curs, mwalls[i])) {
-        is_grabbing = true;
-        grabbed = i;
-        break;
-      }
-    }
+    grab_wall();
   }
 
   // move bees
   for(int i = 0; i < N_BEES; i++) {
-    if(is_tgt[i]) { // if the bee is pursuing a target, move towards the target
-      int x_offset = bias_draw(target.x - bees[i].x);
-      if(!collides({bees[i].x + x_offset, bees[i].y}, true)) {
-        bees[i].x += x_offset;
-      }
-      int y_offset = bias_draw(target.y - bees[i].y);
-      if(!collides({bees[i].x, bees[i].y + y_offset}, true)) {
-        bees[i].y += y_offset;
-      }
-    } else {
-      int x_offset = bias_draw(0);
-      if(!collides({bees[i].x + x_offset, bees[i].y}, true)) {
-        bees[i].x += x_offset;
-      }
-      int y_offset = bias_draw(0);
-      if(!collides({bees[i].x, bees[i].y + y_offset}, true)) {
-        bees[i].y += y_offset;
-      }
-    }
-  
-    // stop chasing when you've the target
-    if (bees[i].x == target.x && bees[i].y == target.y) {
-      is_tgt[i] = false;
-    }
-  
-    // keep bees on screen
-    bees[i].x = mid(0, bees[i].x, 127);
-    bees[i].y = mid(0, bees[i].y, 63);
+    move_bee(i);
   
     arduboy.drawPixel(bees[i].x, bees[i].y); // draw the bee
   }
@@ -228,3 +172,78 @@ bool collides(Point p, bool count_mwalls) {
   return false;
 }
 
+void build_level() {
+  walls[0] = {10,10,40,10};
+  walls[1] = {10,44,40,10};
+  walls[2] = {50, 0,10,20};
+  walls[3] = {50,44,10,20};
+
+  mwalls[0] = {60, 15, 10, 34};
+  mwall_dirs[0] = VERTICAL;
+  mwalls[1] = {70, 15, 10, 34};
+  mwall_dirs[1] = VERTICAL;
+  mwalls[2] = {0, 20, 15, 10};
+  mwall_dirs[2] = HORIZONTAL;
+
+  bees[0] = {30, 5};
+  bees[1] = {30, 58};
+  for(int i = 0; i < N_BEES; i++) {
+    is_tgt[i] = false;
+  }
+}
+
+void make_ping() {
+  sound.tone(350 + VOLUME, 105, 345 + VOLUME, 30);
+  // create ping
+  px = curs.x;
+  py = curs.y;
+  pframe = 0;
+}
+
+void set_target() {
+  for(int i = 0; i < N_BEES; i++) {
+    is_tgt[i] = true;
+  }
+  target = curs;
+}
+
+void grab_wall() {
+  for (int i = 0; i < N_MWALLS; i++) {
+    if(arduboy.collide(curs, mwalls[i])) {
+      is_grabbing = true;
+      grabbed = i;
+      break;
+    }
+  }
+}
+
+void move_bee(int i) {
+  if(is_tgt[i]) { // if the bee is pursuing a target, move towards the target
+    int x_offset = bias_draw(target.x - bees[i].x);
+    if(!collides({bees[i].x + x_offset, bees[i].y}, true)) {
+      bees[i].x += x_offset;
+    }
+    int y_offset = bias_draw(target.y - bees[i].y);
+    if(!collides({bees[i].x, bees[i].y + y_offset}, true)) {
+      bees[i].y += y_offset;
+    }
+  } else {
+    int x_offset = bias_draw(0);
+    if(!collides({bees[i].x + x_offset, bees[i].y}, true)) {
+      bees[i].x += x_offset;
+    }
+    int y_offset = bias_draw(0);
+    if(!collides({bees[i].x, bees[i].y + y_offset}, true)) {
+      bees[i].y += y_offset;
+    }
+  }
+  
+  // stop chasing when you've the target
+  if (bees[i].x == target.x && bees[i].y == target.y) {
+    is_tgt[i] = false;
+  }
+  
+  // keep bees on screen
+  bees[i].x = mid(0, bees[i].x, 127);
+  bees[i].y = mid(0, bees[i].y, 63);
+}
