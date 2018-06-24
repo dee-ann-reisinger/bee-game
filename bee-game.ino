@@ -30,6 +30,7 @@ Rect walls[N_WALLS];
 #define N_BEES 2
 Point bees[N_BEES];
 bool is_tgt[N_BEES]; // tracks whether each bee has a target to chase
+bool in_goal[N_BEES]; // tracks whether each bee has reached the goal
 
 // moveable walls
 #define HORIZONTAL 0
@@ -39,7 +40,7 @@ Rect mwalls[N_MWALLS];
 char mwall_dirs[N_MWALLS];
 
 #define GOALSIZE 11
-int goal_count = 1;
+int goal_count = N_BEES;
 Rect goal = {100, 30, GOALSIZE, GOALSIZE};
 
 void setup() {
@@ -101,7 +102,10 @@ void loop() {
   // move bees
   for(int i = 0; i < N_BEES; i++) {
     move_bee(i);
-  
+    if (!in_goal[i] && arduboy.collide(bees[i], goal)) {
+      goal_count--;
+      in_goal[i] = true;
+    }
     arduboy.drawPixel(bees[i].x, bees[i].y); // draw the bee
   }
 
@@ -261,6 +265,11 @@ void move_bee(int i) {
   // stop chasing when you've the target
   if (bees[i].x == target.x && bees[i].y == target.y) {
     is_tgt[i] = false;
+  }
+
+  if(in_goal[i]) {
+    bees[i].x = mid(goal.x, bees[i].x, goal.x + goal.width - 1);
+    bees[i].y = mid(goal.y, bees[i].y, goal.y + goal.height - 1);
   }
   
   // keep bees on screen
