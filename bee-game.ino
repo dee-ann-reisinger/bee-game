@@ -14,7 +14,7 @@ ArduboyTones sound(arduboy.audio.enabled);
 // cursor stuff
 Point curs = {63, 31}; // cursor's coordinates
 Point target; // where the bees are directed to go
-Rect* grabbed; // the currently grabbed wall, if any
+int grabbed; // the currently grabbed index, if any
 bool is_grabbing = false;
 
 const int coff = 2; // cursor draw offset
@@ -31,8 +31,11 @@ Point bees[N_BEES];
 bool is_tgt[N_BEES]; // tracks whether each bee has a target to chase
 
 // moveable walls
+#define HORIZONTAL 0
+#define VERTICAL 1
 #define N_MWALLS 3
 Rect mwalls[N_MWALLS];
+char mwall_dirs[N_MWALLS];
 
 void setup() {
 
@@ -46,8 +49,11 @@ void setup() {
   walls[3] = {50,44,10,20};
 
   mwalls[0] = {60, 15, 10, 34};
+  mwall_dirs[0] = VERTICAL;
   mwalls[1] = {70, 15, 10, 34};
-  mwalls[2] = {80, 15, 8, 34};
+  mwall_dirs[1] = VERTICAL;
+  mwalls[2] = {0, 20, 15, 10};
+  mwall_dirs[2] = HORIZONTAL;
 
   bees[0] = {30, 5};
   bees[1] = {30, 58};
@@ -64,21 +70,27 @@ void loop() {
   // Move cursor
   if(arduboy.pressed(UP_BUTTON) && curs.y > 0) {
     curs.y -= 1;
-    if(is_grabbing) { // also move mwall if grabbed
-      grabbed->y -= 1;
+    if(is_grabbing && mwall_dirs[grabbed] == VERTICAL) { // also move mwall if grabbed
+      mwalls[grabbed].y -= 1;
     }
   }
   if(arduboy.pressed(DOWN_BUTTON) && curs.y < 63) {
     curs.y += 1;
-    if(is_grabbing) { // also move mwall if grabbed
-      grabbed->y += 1;
+    if(is_grabbing && mwall_dirs[grabbed] == VERTICAL) { // also move mwall if grabbed
+      mwalls[grabbed].y += 1;
     }
   }
   if(arduboy.pressed(LEFT_BUTTON) && curs.x > 0) {
     curs.x -= 1;
+    if(is_grabbing && mwall_dirs[grabbed] == HORIZONTAL) { // also move mwall if grabbed
+      mwalls[grabbed].x -= 1;
+    }
   }
   if(arduboy.pressed(RIGHT_BUTTON) && curs.x < 127) {
     curs.x += 1;
+    if(is_grabbing && mwall_dirs[grabbed] == HORIZONTAL) { // also move mwall if grabbed
+      mwalls[grabbed].x += 1;
+    }
   }
 
   // calling bees
@@ -104,7 +116,7 @@ void loop() {
     for (int i = 0; i < N_MWALLS; i++) {
       if(arduboy.collide(curs, mwalls[i])) {
         is_grabbing = true;
-        grabbed = &mwalls[i];
+        grabbed = i;
         break;
       }
     }
