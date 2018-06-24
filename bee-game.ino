@@ -226,7 +226,9 @@ void make_ping() {
 
 void set_target() {
   for(int i = 0; i < N_BEES; i++) {
-    is_tgt[i] = true;
+    if(!in_goal[i]) {
+      is_tgt[i] = true;
+    }
   }
   target = curs;
 }
