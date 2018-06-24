@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <Arduboy2.h>
 #include <Sprites.h>
 #include <ArduboyTones.h>
@@ -54,26 +55,26 @@ void loop() {
   // Move cursor
   if(arduboy.pressed(UP_BUTTON) && curs.y > 0) {
     curs.y -= 1;
-    if(is_grabbing && mwall_dirs[grabbed] == VERTICAL) { // also move mwall if grabbed
-      mwalls[grabbed].y -= 1;
+    if(is_grabbing) {
+      move_wall(-1, VERTICAL);
     }
   }
   if(arduboy.pressed(DOWN_BUTTON) && curs.y < 63) {
     curs.y += 1;
-    if(is_grabbing && mwall_dirs[grabbed] == VERTICAL) { // also move mwall if grabbed
-      mwalls[grabbed].y += 1;
+    if(is_grabbing) {
+      move_wall(1, VERTICAL);
     }
   }
   if(arduboy.pressed(LEFT_BUTTON) && curs.x > 0) {
     curs.x -= 1;
-    if(is_grabbing && mwall_dirs[grabbed] == HORIZONTAL) { // also move mwall if grabbed
-      mwalls[grabbed].x -= 1;
+    if(is_grabbing) {
+      move_wall(-1, HORIZONTAL);
     }
   }
   if(arduboy.pressed(RIGHT_BUTTON) && curs.x < 127) {
     curs.x += 1;
-    if(is_grabbing && mwall_dirs[grabbed] == HORIZONTAL) { // also move mwall if grabbed
-      mwalls[grabbed].x += 1;
+    if(is_grabbing) {
+      move_wall(1, HORIZONTAL);
     }
   }
 
@@ -247,3 +248,13 @@ void move_bee(int i) {
   bees[i].x = mid(0, bees[i].x, 127);
   bees[i].y = mid(0, bees[i].y, 63);
 }
+
+void move_wall(int d, char dir) {
+  int dx = (dir == HORIZONTAL) ? d : 0;
+  int dy = (dir == VERTICAL) ? d : 0;
+  if(mwall_dirs[grabbed] == dir) { // also move mwall if grabbed
+    mwalls[grabbed].x += dx;
+    mwalls[grabbed].y += dy;
+  }
+}
+
