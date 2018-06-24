@@ -13,14 +13,14 @@ ArduboyTones sound(arduboy.audio.enabled);
 
 // cursor stuff
 Point curs = {63, 31}; // cursor's coordinates
-Point target;
-Rect* grabbed;
+Point target; // where the bees are directed to go
+Rect* grabbed; // the currently grabbed wall, if any
 bool is_grabbing = false;
 
 const int coff = 2; // cursor draw offset
 const int poff = 7; // ping draw offset
-int pframe = -1;
-int px, py;
+int pframe = -1; // frame in ping animation
+int px, py; // ping coordinates
 
 // Level stuff
 #define N_WALLS 4
@@ -28,7 +28,7 @@ Rect walls[N_WALLS];
 
 #define N_BEES 2
 Point bees[N_BEES];
-bool is_tgt[N_BEES];
+bool is_tgt[N_BEES]; // tracks whether each bee has a target to chase
 
 // moveable walls
 #define N_MWALLS 3
@@ -61,52 +61,58 @@ void loop() {
   arduboy.clear();
   arduboy.pollButtons();
 
-  if(arduboy.pressed(UP_BUTTON)) {
+  // Move cursor
+  if(arduboy.pressed(UP_BUTTON) && curs.y > 0) {
     curs.y -= 1;
-    if(is_grabbing) {
+    if(is_grabbing) { // also move mwall if grabbed
       grabbed->y -= 1;
     }
   }
-  if(arduboy.pressed(DOWN_BUTTON)) {
+  if(arduboy.pressed(DOWN_BUTTON) && curs.y < 63) {
     curs.y += 1;
-    if(is_grabbing) {
+    if(is_grabbing) { // also move mwall if grabbed
       grabbed->y += 1;
     }
   }
-  if(arduboy.pressed(LEFT_BUTTON)) {
+  if(arduboy.pressed(LEFT_BUTTON) && curs.x > 0) {
     curs.x -= 1;
   }
-  if(arduboy.pressed(RIGHT_BUTTON)) {
+  if(arduboy.pressed(RIGHT_BUTTON) && curs.x < 127) {
     curs.x += 1;
   }
 
+  // calling bees
   if(arduboy.justPressed(A_BUTTON)) {
     sound.tone(350 + VOLUME, 105, 345 + VOLUME, 30);
     for(int i = 0; i < N_BEES; i++) {
       is_tgt[i] = true;
     }
     target = curs;
+    // create ping
     px = curs.x;
     py = curs.y;
     pframe = 0;
   }
 
+  // stop grabbing walls when you're not pressing the B button
   if(!arduboy.pressed(B_BUTTON)) {
     is_grabbing = false;
   }
 
+  // grab wall on pressing B
   if(arduboy.justPressed(B_BUTTON)) {
     for (int i = 0; i < N_MWALLS; i++) {
       if(arduboy.collide(curs, mwalls[i])) {
-      is_grabbing = true;
-      grabbed = &mwalls[i];
-      break;
-    }
+        is_grabbing = true;
+        grabbed = &mwalls[i];
+        break;
+      }
     }
   }
 
+  // move bees
   for(int i = 0; i < N_BEES; i++) {
-    if(is_tgt[i]) {
+    if(is_tgt[i]) { // if the bee is pursuing a target, move towards the target
       int x_offset = bias_draw(target.x - bees[i].x);
       if(!collides({bees[i].x + x_offset, bees[i].y}, true)) {
         bees[i].x += x_offset;
@@ -126,17 +132,19 @@ void loop() {
       }
     }
   
+    // stop chasing when you've the target
     if (bees[i].x == target.x && bees[i].y == target.y) {
       is_tgt[i] = false;
     }
   
+    // keep bees on screen
     bees[i].x = mid(0, bees[i].x, 127);
     bees[i].y = mid(0, bees[i].y, 63);
-    curs.x = mid(0, curs.x, 127);
-    curs.y = mid(0, curs.y, 63);
   
     arduboy.drawPixel(bees[i].x, bees[i].y); // draw the bee
   }
+
+  // Drawing code
   for(int i = 0; i < N_WALLS; i++) {
     draw_wall(walls[i]);
   }
@@ -153,7 +161,7 @@ void loop() {
   }
 
  
-
+  // advance the ping animation
   if (pframe >= 0) {
     pframe++;
     if (pframe > 2) {
